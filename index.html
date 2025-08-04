@@ -454,12 +454,12 @@
             }
         }
 
-        // ฟังก์ชันสำหรับบันทึกข้อมูลลง localStorage
+        // **เพิ่มฟังก์ชันสำหรับบันทึกข้อมูลลง localStorage**
         function saveExpenses() {
             localStorage.setItem('expenses', JSON.stringify(expenses));
         }
 
-        // ฟังก์ชันสำหรับโหลดข้อมูลจาก localStorage
+        // **เพิ่มฟังก์ชันสำหรับโหลดข้อมูลจาก localStorage**
         function loadExpenses() {
             const savedExpenses = localStorage.getItem('expenses');
             if (savedExpenses) {
@@ -768,7 +768,7 @@
 
         // โหลดข้อมูลเมื่อหน้าเว็บโหลดเสร็จ
         document.addEventListener('DOMContentLoaded', function() {
-            loadExpenses();
+            loadExpenses(); // **โหลดข้อมูลเมื่อหน้าเว็บเปิดขึ้นมา**
             setupDashboardSelectors(); // Setup selectors on dashboard load
             setupReportSelectors(); // Setup selectors on reports load
             showSection('dashboard'); // แสดงหน้าแดชบอร์ดเมื่อโหลดครั้งแรก

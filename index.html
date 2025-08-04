@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการค่าใช้จ่าย</title>
-    <!-- Tailwind CSS CDN สำหรับการออกแบบหน้าตาที่สวยงามและ Responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -19,21 +18,17 @@
             display: block;
         }
     </style>
-    <!-- Chart.js สำหรับสร้างกราฟวงกลมในภายหลัง -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 p-4">
 
-    <!-- Container หลักของแอปพลิเคชัน -->
     <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         
-        <!-- ส่วนหัว (Header) ของแอปพลิเคชัน -->
         <div class="bg-blue-600 text-white p-6 rounded-t-lg">
             <h1 class="text-3xl font-bold">ระบบจัดการค่าใช้จ่าย</h1>
             <p class="text-blue-200 mt-1">บริหารค่าใช้จ่ายของบริษัทและรถแต่ละคัน</p>
         </div>
 
-        <!-- เมนูนำทาง (Navigation) -->
         <nav class="bg-gray-200">
             <ul class="flex justify-center p-2 space-x-2">
                 <li><button onclick="showSection('dashboard')" class="nav-button px-4 py-2 rounded-md font-medium text-gray-700 hover:bg-blue-200 transition duration-300">แดชบอร์ด</button></li>
@@ -43,12 +38,23 @@
             </ul>
         </nav>
 
-        <!-- เนื้อหาหลักของแอปพลิเคชัน -->
         <div class="p-6">
             
-            <!-- ส่วนที่ 1: แดชบอร์ด (Dashboard) -->
             <div id="dashboard" class="section active">
-                <h2 class="text-2xl font-bold mb-4">ภาพรวมประจำเดือน <span id="current-month-display"></span></h2>
+                <h2 class="text-2xl font-bold mb-4">ภาพรวม <span id="dashboard-month-display"></span></h2>
+                
+                <div class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
+                    <div>
+                        <label for="dashboard-month" class="block text-sm font-medium text-gray-700">เดือน</label>
+                        <select id="dashboard-month" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></select>
+                    </div>
+                    <div>
+                        <label for="dashboard-year" class="block text-sm font-medium text-gray-700">ปี</label>
+                        <select id="dashboard-year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></select>
+                    </div>
+                    <button onclick="renderDashboard()" class="mt-auto bg-blue-500 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-600 transition duration-300">แสดง</button>
+                </div>
+
                 <div class="grid md:grid-cols-2 gap-6 mb-8">
                     <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
                         <p class="text-lg font-medium text-blue-800">ยอดรวมค่าใช้จ่ายทั้งหมด</p>
@@ -72,8 +78,7 @@
                             </tr>
                         </thead>
                         <tbody id="car-summary-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- ข้อมูลจะถูกเพิ่มที่นี่โดย JavaScript -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
 
@@ -85,7 +90,6 @@
                 </div>
             </div>
 
-            <!-- ส่วนที่ 2: บันทึกค่าใช้จ่าย (Add Expense) -->
             <div id="add-expense" class="section">
                 <h2 class="text-2xl font-bold mb-4">บันทึกค่าใช้จ่ายใหม่</h2>
                 <form id="expense-form" class="space-y-4">
@@ -110,7 +114,7 @@
                             <select id="car-plate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
                                 <option value="">-- เลือกทะเบียนรถ --</option>
                                 <option value="รถคันที่ 1">รถคันที่ 1 (2ขบ 6754)</option>
-                                <option value="รถคันที่ 2">รถคันที่ 2 (3ขฐ 8854)</option>
+                                <option value="รถคันที่ 2">รถคันที่ 2 (3ชฐ 8854)</option>
                             </select>
                         </div>
                         <div id="distance-field-container" class="hidden">
@@ -131,11 +135,9 @@
                 </form>
             </div>
 
-            <!-- ส่วนที่ 3: รายการทั้งหมด (View Expenses) -->
             <div id="view-expenses" class="section">
                 <h2 class="text-2xl font-bold mb-4">รายการค่าใช้จ่ายทั้งหมด</h2>
 
-                <!-- ฟอร์มสำหรับกรองข้อมูล -->
                 <form id="filter-form" class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label for="filter-start-date" class="block text-sm font-medium text-gray-700">จากวันที่</label>
@@ -183,13 +185,11 @@
                             </tr>
                         </thead>
                         <tbody id="expense-list-table-body" class="bg-white divide-y divide-gray-200">
-                            <!-- ข้อมูลจะถูกเพิ่มที่นี่โดย JavaScript -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ส่วนที่ 4: รายงานสรุป (Reports) -->
             <div id="reports" class="section">
                 <h2 class="text-2xl font-bold mb-4">รายงานสรุปค่าใช้จ่าย</h2>
                 <div class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
@@ -218,14 +218,12 @@
                                 </tr>
                             </thead>
                             <tbody id="reports-table-body" class="bg-white divide-y divide-gray-200">
-                                <!-- ข้อมูลจะถูกเพิ่มที่นี่โดย JavaScript -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Modal สำหรับแก้ไขรายการค่าใช้จ่าย (ซ่อนอยู่) -->
             <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
                 <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                     <h3 class="text-lg font-bold mb-4">แก้ไขรายการค่าใช้จ่าย</h3>
@@ -273,11 +271,7 @@
                 </div>
             </div>
 
-        </div> <!-- end of p-6 -->
-    </div> <!-- end of container -->
-
-    <!-- ส่วน JavaScript จะถูกเพิ่มในขั้นตอนถัดไป -->
-    <script>
+        </div> </div> <script>
         // กำหนดอาร์เรย์สำหรับเก็บข้อมูลค่าใช้จ่าย
         let expenses = [];
         let expenseChart; // ตัวแปรสำหรับเก็บ instance ของ Chart.js
@@ -369,8 +363,8 @@
                 }
             }
             if (!date || !type || isNaN(amount) || amount <= 0) {
-                 alert('โปรดกรอกข้อมูลให้ครบถ้วนและถูกต้อง');
-                 return;
+                alert('โปรดกรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+                return;
             }
 
             const newExpense = {
@@ -433,14 +427,14 @@
 
             // ตรวจสอบความถูกต้องของข้อมูล
             if (updatedExpense.type === 'ค่าน้ำมัน' || updatedExpense.type === 'ค่าทางด่วน') {
-                 if (!updatedExpense.car || (updatedExpense.type === 'ค่าน้ำมัน' && updatedExpense.distance <= 0)) {
+                if (!updatedExpense.car || (updatedExpense.type === 'ค่าน้ำมัน' && updatedExpense.distance <= 0)) {
                     alert('โปรดเลือกทะเบียนรถและระบุระยะทางที่ถูกต้อง');
                     return;
                 }
             }
-             if (!updatedExpense.date || !updatedExpense.type || isNaN(updatedExpense.amount) || updatedExpense.amount <= 0) {
-                 alert('โปรดกรอกข้อมูลให้ครบถ้วนและถูกต้อง');
-                 return;
+            if (!updatedExpense.date || !updatedExpense.type || isNaN(updatedExpense.amount) || updatedExpense.amount <= 0) {
+                alert('โปรดกรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+                return;
             }
 
             expenses[expenseIndex] = updatedExpense;
@@ -475,19 +469,18 @@
 
         // ฟังก์ชันสำหรับแสดงข้อมูลบนแดชบอร์ด
         function renderDashboard() {
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            const dashboardMonth = parseInt(document.getElementById('dashboard-month').value);
+            const dashboardYear = parseInt(document.getElementById('dashboard-year').value);
             const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
             
-            // กรองข้อมูลเฉพาะเดือนปัจจุบัน
+            // กรองข้อมูลเฉพาะเดือนและปีที่เลือก
             const monthlyExpenses = expenses.filter(exp => {
                 const expDate = new Date(exp.date);
-                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+                return expDate.getMonth() === dashboardMonth && expDate.getFullYear() === dashboardYear;
             });
 
-            // แสดงเดือนปัจจุบัน
-            document.getElementById('current-month-display').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+            // แสดงเดือนและปีที่เลือก
+            document.getElementById('dashboard-month-display').textContent = `${monthNames[dashboardMonth]} ${dashboardYear}`;
 
             // คำนวณยอดรวม
             const totalMonthlyExpense = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -546,6 +539,13 @@
                 'rgba(239, 68, 68, 0.8)',  // red-500
                 'rgba(107, 114, 128, 0.8)' // gray-500
             ];
+            const borderColors = [
+                'rgba(59, 130, 246, 1)',
+                'rgba(16, 185, 129, 1)',
+                'rgba(249, 115, 22, 1)',
+                'rgba(239, 68, 68, 1)',
+                'rgba(107, 114, 128, 1)'
+            ];
 
             if (expenseChart) {
                 expenseChart.destroy(); // ทำลายกราฟเก่าก่อนสร้างใหม่
@@ -558,8 +558,8 @@
                     datasets: [{
                         data: values,
                         backgroundColor: colors,
-                        borderColor: '#ffffff',
-                        borderWidth: 2
+                        borderColor: borderColors,
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -568,20 +568,18 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: {
-                                font: {
-                                    size: 14
-                                }
-                            }
                         },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed || 0;
-                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
-                                    return `${label}: ${value.toFixed(2)} บาท (${percentage}%)`;
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(context.parsed);
+                                    }
+                                    return label;
                                 }
                             }
                         }
@@ -592,158 +590,189 @@
 
         // ฟังก์ชันสำหรับแสดงรายการค่าใช้จ่ายทั้งหมด
         function renderExpenseList(filteredExpenses = expenses) {
-            const tableBody = document.getElementById('expense-list-table-body');
-            tableBody.innerHTML = '';
-            
-            const sortedExpenses = filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const expenseListTableBody = document.getElementById('expense-list-table-body');
+            expenseListTableBody.innerHTML = ''; // ล้างข้อมูลเก่า
+
+            // เรียงลำดับตามวันที่จากใหม่ไปเก่า
+            const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             if (sortedExpenses.length === 0) {
-                 const row = document.createElement('tr');
-                 row.innerHTML = `<td colspan="7" class="text-center py-4 text-gray-500">ไม่มีรายการค่าใช้จ่าย</td>`;
-                 tableBody.appendChild(row);
-                 return;
+                expenseListTableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">ไม่พบข้อมูลค่าใช้จ่าย</td></tr>`;
+                return;
             }
 
             sortedExpenses.forEach(exp => {
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${exp.date}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.type}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.car}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.distance ? exp.distance.toFixed(2) : '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.distance > 0 ? exp.distance.toFixed(2) : '-'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.amount.toFixed(2)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.description || '-'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="showEditModal(${exp.id})" class="text-indigo-600 hover:text-indigo-900 mr-2">แก้ไข</button>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="showEditModal(${exp.id})" class="text-blue-600 hover:text-blue-900 mr-3">แก้ไข</button>
                         <button onclick="deleteExpense(${exp.id})" class="text-red-600 hover:text-red-900">ลบ</button>
                     </td>
                 `;
-                tableBody.appendChild(row);
+                expenseListTableBody.appendChild(row);
             });
         }
 
         // ฟังก์ชันสำหรับกรองข้อมูล
         document.getElementById('filter-form').addEventListener('submit', function(event) {
             event.preventDefault();
-
             const startDate = document.getElementById('filter-start-date').value;
             const endDate = document.getElementById('filter-end-date').value;
             const type = document.getElementById('filter-type').value;
             const car = document.getElementById('filter-car').value;
 
-            const filtered = expenses.filter(exp => {
+            let filtered = expenses.filter(exp => {
                 const expDate = new Date(exp.date);
-                const isDateInRange = (!startDate || expDate >= new Date(startDate)) && (!endDate || expDate <= new Date(endDate));
-                const isTypeMatch = (type === 'all' || exp.type === type);
-                const isCarMatch = (car === 'all' || exp.car === car);
+                const start = startDate ? new Date(startDate) : null;
+                const end = endDate ? new Date(endDate) : null;
 
-                return isDateInRange && isTypeMatch && isCarMatch;
+                const dateMatch = (!start || expDate >= start) && (!end || expDate <= end);
+                const typeMatch = (type === 'all' || exp.type === type);
+                const carMatch = (car === 'all' || exp.car === car);
+
+                return dateMatch && typeMatch && carMatch;
             });
-
             renderExpenseList(filtered);
         });
 
-        // ฟังก์ชันสำหรับรีเซ็ตฟิลเตอร์
+        // ฟังก์ชันสำหรับล้างฟิลเตอร์
         function clearFilters() {
-            document.getElementById('filter-form').reset();
-            renderExpenseList();
+            document.getElementById('filter-start-date').value = '';
+            document.getElementById('filter-end-date').value = '';
+            document.getElementById('filter-type').value = 'all';
+            document.getElementById('filter-car').value = 'all';
+            renderExpenseList(); // แสดงทั้งหมดหลังจากล้างฟิลเตอร์
         }
 
-        // ฟังก์ชันสำหรับสร้างรายงานสรุป
-        function renderReports() {
+        // ฟังก์ชันสำหรับเตรียม Report (เลือกเดือน/ปี)
+        function setupReportSelectors() {
             const reportMonthSelect = document.getElementById('report-month');
             const reportYearSelect = document.getElementById('report-year');
-            const reportsTableBody = document.getElementById('reports-table-body');
             const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-            
-            // สร้างตัวเลือกเดือนและปี
-            const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            const currentYear = new Date().getFullYear();
+
+            // Populate months
             reportMonthSelect.innerHTML = '';
-            for (let i = 0; i < 12; i++) {
+            monthNames.forEach((name, index) => {
                 const option = document.createElement('option');
-                option.value = i;
-                option.textContent = monthNames[i];
-                if (i === currentMonth) option.selected = true;
+                option.value = index; // Month index (0-11)
+                option.textContent = name;
+                if (index === new Date().getMonth()) {
+                    option.selected = true; // Set current month as default
+                }
                 reportMonthSelect.appendChild(option);
-            }
+            });
+
+            // Populate years (e.g., current year +/- 5 years)
             reportYearSelect.innerHTML = '';
-            for (let i = currentYear - 5; i <= currentYear + 1; i++) {
+            for (let i = currentYear - 5; i <= currentYear + 5; i++) {
                 const option = document.createElement('option');
                 option.value = i;
                 option.textContent = i;
-                if (i === currentYear) option.selected = true;
+                if (i === currentYear) {
+                    option.selected = true; // Set current year as default
+                }
                 reportYearSelect.appendChild(option);
             }
-
-            generateReport(); // แสดงรายงานเริ่มต้น
         }
-        
-        function generateReport() {
-            const month = parseInt(document.getElementById('report-month').value);
-            const year = parseInt(document.getElementById('report-year').value);
 
-            const filteredExpenses = expenses.filter(exp => {
-                const expDate = new Date(exp.date);
-                return expDate.getMonth() === month && expDate.getFullYear() === year;
+        // ฟังก์ชันสำหรับเตรียม Dashboard (เลือกเดือน/ปี)
+        function setupDashboardSelectors() {
+            const dashboardMonthSelect = document.getElementById('dashboard-month');
+            const dashboardYearSelect = document.getElementById('dashboard-year');
+            const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            const currentYear = new Date().getFullYear();
+
+            // Populate months
+            dashboardMonthSelect.innerHTML = '';
+            monthNames.forEach((name, index) => {
+                const option = document.createElement('option');
+                option.value = index; // Month index (0-11)
+                option.textContent = name;
+                if (index === new Date().getMonth()) {
+                    option.selected = true; // Set current month as default
+                }
+                dashboardMonthSelect.appendChild(option);
             });
 
-            const carSummary = {};
-            filteredExpenses.forEach(exp => {
-                if (exp.car !== 'N/A') {
-                    if (!carSummary[exp.car]) {
-                        carSummary[exp.car] = { fuel: 0, toll: 0, distance: 0 };
-                    }
-                    if (exp.type === 'ค่าน้ำมัน') {
-                        carSummary[exp.car].fuel += exp.amount;
-                        carSummary[exp.car].distance += exp.distance;
-                    } else if (exp.type === 'ค่าทางด่วน') {
-                        carSummary[exp.car].toll += exp.amount;
-                    }
+            // Populate years (e.g., current year +/- 5 years)
+            dashboardYearSelect.innerHTML = '';
+            for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === currentYear) {
+                    option.selected = true; // Set current year as default
                 }
+                dashboardYearSelect.appendChild(option);
+            }
+        }
+
+
+        // ฟังก์ชันสำหรับสร้างรายงานสรุป
+        function generateReport() {
+            const reportMonth = parseInt(document.getElementById('report-month').value);
+            const reportYear = parseInt(document.getElementById('report-year').value);
+            const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+            const filteredExpensesForReport = expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                return expDate.getMonth() === reportMonth && expDate.getFullYear() === reportYear;
             });
 
             const reportsTableBody = document.getElementById('reports-table-body');
             reportsTableBody.innerHTML = '';
-            
-            if (Object.keys(carSummary).length === 0) {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td colspan="5" class="text-center py-4 text-gray-500">ไม่มีข้อมูลสำหรับเดือนที่เลือก</td>`;
-                reportsTableBody.appendChild(row);
+
+            const carReportSummary = {};
+            filteredExpensesForReport.forEach(exp => {
+                if (exp.car !== 'N/A') {
+                    if (!carReportSummary[exp.car]) {
+                        carReportSummary[exp.car] = { fuel: 0, toll: 0, totalAmount: 0, distance: 0 };
+                    }
+                    carReportSummary[exp.car].totalAmount += exp.amount;
+                    if (exp.type === 'ค่าน้ำมัน') {
+                        carReportSummary[exp.car].fuel += exp.amount;
+                        carReportSummary[exp.car].distance += exp.distance;
+                    } else if (exp.type === 'ค่าทางด่วน') {
+                        carReportSummary[exp.car].toll += exp.amount;
+                    }
+                }
+            });
+
+            if (Object.keys(carReportSummary).length === 0) {
+                reportsTableBody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">ไม่พบข้อมูลค่าใช้จ่ายรถสำหรับเดือน ${monthNames[reportMonth]} ${reportYear}</td></tr>`;
                 return;
             }
 
-            for (const car in carSummary) {
-                const totalCarExpense = carSummary[car].fuel + carSummary[car].toll;
-                const totalDistance = carSummary[car].distance;
-                const averageCost = totalDistance > 0 ? (totalCarExpense / totalDistance) : 0;
-                
+            for (const car in carReportSummary) {
+                const summary = carReportSummary[car];
+                const averageCostPerKm = summary.distance > 0 ? (summary.fuel / summary.distance) : 0; // Only fuel cost for average
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${car}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].fuel.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].toll.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].distance.toFixed(2)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${averageCost.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${summary.fuel.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${summary.toll.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${summary.distance.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${averageCostPerKm.toFixed(2)}</td>
                 `;
                 reportsTableBody.appendChild(row);
             }
         }
 
-        // ฟังก์ชันเริ่มต้นการทำงานของแอป
-        function init() {
+
+        // โหลดข้อมูลเมื่อหน้าเว็บโหลดเสร็จ
+        document.addEventListener('DOMContentLoaded', function() {
             loadExpenses();
-            renderDashboard();
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('expense-date').value = today;
-        }
-
-        window.onload = init;
+            setupDashboardSelectors(); // Setup selectors on dashboard load
+            setupReportSelectors(); // Setup selectors on reports load
+            showSection('dashboard'); // แสดงหน้าแดชบอร์ดเมื่อโหลดครั้งแรก
+        });
     </script>
-
 </body>
 </html>
-
-

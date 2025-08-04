@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการค่าใช้จ่าย</title>
+    <!-- Tailwind CSS CDN สำหรับการออกแบบหน้าตาที่สวยงามและ Responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* กำหนดให้ส่วนเนื้อหาแต่ละส่วนซ่อนไว้ก่อน และจะแสดงเฉพาะส่วนที่ Active */
+        .section {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+    </style>
+    <!-- Chart.js สำหรับสร้างกราฟวงกลมในภายหลัง -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+
+    <!-- Container หลักของแอปพลิเคชัน -->
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+        
+        <!-- ส่วนหัว (Header) ของแอปพลิเคชัน -->
+        <div class="bg-blue-600 text-white p-6 rounded-t-lg">
+            <h1 class="text-3xl font-bold">ระบบจัดการค่าใช้จ่าย</h1>
+            <p class="text-blue-200 mt-1">บริหารค่าใช้จ่ายของบริษัทและรถแต่ละคัน</p>
+        </div>
+
+        <!-- เมนูนำทาง (Navigation) -->
+        <nav class="bg-gray-200">
+            <ul class="flex justify-center p-2 space-x-2">
+                <li><button onclick="showSection('dashboard')" class="nav-button px-4 py-2 rounded-md font-medium text-gray-700 hover:bg-blue-200 transition duration-300">แดชบอร์ด</button></li>
+                <li><button onclick="showSection('add-expense')" class="nav-button px-4 py-2 rounded-md font-medium text-gray-700 hover:bg-blue-200 transition duration-300">บันทึกค่าใช้จ่าย</button></li>
+                <li><button onclick="showSection('view-expenses')" class="nav-button px-4 py-2 rounded-md font-medium text-gray-700 hover:bg-blue-200 transition duration-300">รายการทั้งหมด</button></li>
+                <li><button onclick="showSection('reports')" class="nav-button px-4 py-2 rounded-md font-medium text-gray-700 hover:bg-blue-200 transition duration-300">รายงานสรุป</button></li>
+            </ul>
+        </nav>
+
+        <!-- เนื้อหาหลักของแอปพลิเคชัน -->
+        <div class="p-6">
+            
+            <!-- ส่วนที่ 1: แดชบอร์ด (Dashboard) -->
+            <div id="dashboard" class="section active">
+                <h2 class="text-2xl font-bold mb-4">ภาพรวมประจำเดือน <span id="current-month-display"></span></h2>
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                        <p class="text-lg font-medium text-blue-800">ยอดรวมค่าใช้จ่ายทั้งหมด</p>
+                        <p class="text-4xl font-bold text-blue-600 mt-2"><span id="total-monthly-expense">0.00</span> บาท</p>
+                    </div>
+                    <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+                        <p class="text-lg font-medium text-green-800">ยอดรวมค่าน้ำมัน</p>
+                        <p class="text-4xl font-bold text-green-600 mt-2"><span id="total-fuel-cost">0.00</span> บาท</p>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold mb-4">สรุปค่าใช้จ่ายแยกตามรถ</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-sm border border-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ทะเบียนรถ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าน้ำมัน (บาท)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าทางด่วน (บาท)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ระยะทางรวม (กม.)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="car-summary-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- ข้อมูลจะถูกเพิ่มที่นี่โดย JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-xl font-bold mb-4">สัดส่วนค่าใช้จ่าย</h3>
+                    <div class="w-full h-80 flex items-center justify-center">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ส่วนที่ 2: บันทึกค่าใช้จ่าย (Add Expense) -->
+            <div id="add-expense" class="section">
+                <h2 class="text-2xl font-bold mb-4">บันทึกค่าใช้จ่ายใหม่</h2>
+                <form id="expense-form" class="space-y-4">
+                    <div>
+                        <label for="expense-date" class="block text-sm font-medium text-gray-700">วันที่</label>
+                        <input type="date" id="expense-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label for="expense-type" class="block text-sm font-medium text-gray-700">ประเภทค่าใช้จ่าย</label>
+                        <select id="expense-type" required onchange="toggleCarFields()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            <option value="">-- เลือกประเภท --</option>
+                            <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                            <option value="ค่าทางด่วน">ค่าทางด่วน</option>
+                            <option value="ค่าส่งจดหมายถึงลูกค้า">ค่าส่งจดหมายถึงลูกค้า</option>
+                            <option value="ค่าใช้จ่ายทั่วไปอื่นๆ">ค่าใช้จ่ายทั่วไปอื่นๆ</option>
+                        </select>
+                    </div>
+
+                    <div id="car-fields-container" class="space-y-4 hidden">
+                        <div>
+                            <label for="car-plate" class="block text-sm font-medium text-gray-700">ทะเบียนรถ</label>
+                            <select id="car-plate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                                <option value="">-- เลือกทะเบียนรถ --</option>
+                                <option value="รถคันที่ 1">รถคันที่ 1 (กข 1234)</option>
+                                <option value="รถคันที่ 2">รถคันที่ 2 (คง 5678)</option>
+                            </select>
+                        </div>
+                        <div id="distance-field-container" class="hidden">
+                            <label for="distance" class="block text-sm font-medium text-gray-700">ระยะทางที่วิ่ง (กม.)</label>
+                            <input type="number" id="distance" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700">จำนวนเงิน (บาท)</label>
+                        <input type="number" id="amount" required step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">รายละเอียด/หมายเหตุ</label>
+                        <textarea id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-green-500 text-white py-2 px-4 rounded-md font-semibold hover:bg-green-600 transition duration-300">บันทึกข้อมูล</button>
+                </form>
+            </div>
+
+            <!-- ส่วนที่ 3: รายการทั้งหมด (View Expenses) -->
+            <div id="view-expenses" class="section">
+                <h2 class="text-2xl font-bold mb-4">รายการค่าใช้จ่ายทั้งหมด</h2>
+
+                <!-- ฟอร์มสำหรับกรองข้อมูล -->
+                <form id="filter-form" class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label for="filter-start-date" class="block text-sm font-medium text-gray-700">จากวันที่</label>
+                        <input type="date" id="filter-start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label for="filter-end-date" class="block text-sm font-medium text-gray-700">ถึงวันที่</label>
+                        <input type="date" id="filter-end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label for="filter-type" class="block text-sm font-medium text-gray-700">ประเภท</label>
+                        <select id="filter-type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                            <option value="ค่าทางด่วน">ค่าทางด่วน</option>
+                            <option value="ค่าส่งจดหมายถึงลูกค้า">ค่าส่งจดหมายถึงลูกค้า</option>
+                            <option value="ค่าใช้จ่ายทั่วไปอื่นๆ">ค่าใช้จ่ายทั่วไปอื่นๆ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-car" class="block text-sm font-medium text-gray-700">ทะเบียนรถ</label>
+                        <select id="filter-car" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="รถคันที่ 1">รถคันที่ 1</option>
+                            <option value="รถคันที่ 2">รถคันที่ 2</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-4 flex justify-end space-x-2 mt-4 sm:mt-0">
+                        <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-600 transition duration-300">ค้นหา</button>
+                        <button type="button" onclick="clearFilters()" class="bg-gray-300 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-400 transition duration-300">รีเซ็ต</button>
+                    </div>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-sm border border-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ทะเบียนรถ</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ระยะทาง (กม.)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จำนวนเงิน (บาท)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense-list-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- ข้อมูลจะถูกเพิ่มที่นี่โดย JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ส่วนที่ 4: รายงานสรุป (Reports) -->
+            <div id="reports" class="section">
+                <h2 class="text-2xl font-bold mb-4">รายงานสรุปค่าใช้จ่าย</h2>
+                <div class="mb-6 bg-gray-50 p-4 rounded-lg shadow-sm space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
+                    <div>
+                        <label for="report-month" class="block text-sm font-medium text-gray-700">เดือน</label>
+                        <select id="report-month" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></select>
+                    </div>
+                    <div>
+                        <label for="report-year" class="block text-sm font-medium text-gray-700">ปี</label>
+                        <select id="report-year" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></select>
+                    </div>
+                    <button onclick="generateReport()" class="mt-auto bg-blue-500 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-600 transition duration-300">แสดงรายงาน</button>
+                </div>
+
+                <div id="report-container">
+                    <h3 class="text-xl font-bold mb-4">สรุปยอดรวมค่าใช้จ่ายและระยะทางรถแต่ละคัน</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-lg shadow-sm border border-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ทะเบียนรถ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าน้ำมัน (บาท)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าทางด่วน (บาท)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ระยะทางรวม (กม.)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ค่าใช้จ่ายเฉลี่ย (บาท/กม.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- ข้อมูลจะถูกเพิ่มที่นี่โดย JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal สำหรับแก้ไขรายการค่าใช้จ่าย (ซ่อนอยู่) -->
+            <div id="edit-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <h3 class="text-lg font-bold mb-4">แก้ไขรายการค่าใช้จ่าย</h3>
+                    <form id="edit-form" class="space-y-4">
+                        <input type="hidden" id="edit-id">
+                        <div>
+                            <label for="edit-date" class="block text-sm font-medium text-gray-700">วันที่</label>
+                            <input type="date" id="edit-date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label for="edit-type" class="block text-sm font-medium text-gray-700">ประเภทค่าใช้จ่าย</label>
+                            <select id="edit-type" required onchange="toggleEditCarFields()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                                <option value="ค่าน้ำมัน">ค่าน้ำมัน</option>
+                                <option value="ค่าทางด่วน">ค่าทางด่วน</option>
+                                <option value="ค่าส่งจดหมายถึงลูกค้า">ค่าส่งจดหมายถึงลูกค้า</option>
+                                <option value="ค่าใช้จ่ายทั่วไปอื่นๆ">ค่าใช้จ่ายทั่วไปอื่นๆ</option>
+                            </select>
+                        </div>
+                        <div id="edit-car-fields-container" class="space-y-4 hidden">
+                            <div>
+                                <label for="edit-car-plate" class="block text-sm font-medium text-gray-700">ทะเบียนรถ</label>
+                                <select id="edit-car-plate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                                    <option value="รถคันที่ 1">รถคันที่ 1 (กข 1234)</option>
+                                    <option value="รถคันที่ 2">รถคันที่ 2 (คง 5678)</option>
+                                </select>
+                            </div>
+                            <div id="edit-distance-field-container" class="hidden">
+                                <label for="edit-distance" class="block text-sm font-medium text-gray-700">ระยะทางที่วิ่ง (กม.)</label>
+                                <input type="number" id="edit-distance" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="edit-amount" class="block text-sm font-medium text-gray-700">จำนวนเงิน (บาท)</label>
+                            <input type="number" id="edit-amount" required step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                        </div>
+                        <div>
+                            <label for="edit-description" class="block text-sm font-medium text-gray-700">รายละเอียด/หมายเหตุ</label>
+                            <textarea id="edit-description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-4">
+                            <button type="button" onclick="closeEditModal()" class="bg-gray-300 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-400">ยกเลิก</button>
+                            <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-600">บันทึก</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div> <!-- end of p-6 -->
+    </div> <!-- end of container -->
+
+    <!-- ส่วน JavaScript จะถูกเพิ่มในขั้นตอนถัดไป -->
+    <script>
+        // กำหนดอาร์เรย์สำหรับเก็บข้อมูลค่าใช้จ่าย
+        let expenses = [];
+        let expenseChart; // ตัวแปรสำหรับเก็บ instance ของ Chart.js
+
+        // ฟังก์ชันสำหรับสลับหน้าจอ (Section)
+        function showSection(sectionId) {
+            // ซ่อนทุกส่วน
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            // แสดงเฉพาะส่วนที่ต้องการ
+            document.getElementById(sectionId).classList.add('active');
+
+            // อัปเดตข้อมูลและ UI ของแต่ละส่วนเมื่อเปิดขึ้นมา
+            if (sectionId === 'dashboard') {
+                renderDashboard();
+            } else if (sectionId === 'view-expenses') {
+                renderExpenseList();
+            } else if (sectionId === 'reports') {
+                renderReports();
+            }
+        }
+
+        // ฟังก์ชันสำหรับสลับการแสดงฟิลด์ทะเบียนรถและระยะทาง
+        function toggleCarFields() {
+            const expenseType = document.getElementById('expense-type').value;
+            const carFieldsContainer = document.getElementById('car-fields-container');
+            const distanceFieldContainer = document.getElementById('distance-field-container');
+
+            if (expenseType === 'ค่าน้ำมัน' || expenseType === 'ค่าทางด่วน') {
+                carFieldsContainer.classList.remove('hidden');
+                document.getElementById('car-plate').required = true;
+                if (expenseType === 'ค่าน้ำมัน') {
+                    distanceFieldContainer.classList.remove('hidden');
+                    document.getElementById('distance').required = true;
+                } else {
+                    distanceFieldContainer.classList.add('hidden');
+                    document.getElementById('distance').required = false;
+                }
+            } else {
+                carFieldsContainer.classList.add('hidden');
+                document.getElementById('car-plate').required = false;
+                distanceFieldContainer.classList.add('hidden');
+                document.getElementById('distance').required = false;
+            }
+        }
+
+        // ฟังก์ชันสำหรับสลับการแสดงฟิลด์ใน modal แก้ไข
+        function toggleEditCarFields() {
+            const expenseType = document.getElementById('edit-type').value;
+            const carFieldsContainer = document.getElementById('edit-car-fields-container');
+            const distanceFieldContainer = document.getElementById('edit-distance-field-container');
+
+            if (expenseType === 'ค่าน้ำมัน' || expenseType === 'ค่าทางด่วน') {
+                carFieldsContainer.classList.remove('hidden');
+                document.getElementById('edit-car-plate').required = true;
+                if (expenseType === 'ค่าน้ำมัน') {
+                    distanceFieldContainer.classList.remove('hidden');
+                    document.getElementById('edit-distance').required = true;
+                } else {
+                    distanceFieldContainer.classList.add('hidden');
+                    document.getElementById('edit-distance').required = false;
+                }
+            } else {
+                carFieldsContainer.classList.add('hidden');
+                document.getElementById('edit-car-plate').required = false;
+                distanceFieldContainer.classList.add('hidden');
+                document.getElementById('edit-distance').required = false;
+            }
+        }
+
+        // ฟังก์ชันสำหรับบันทึกข้อมูลค่าใช้จ่าย
+        document.getElementById('expense-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // ป้องกันการ reload หน้าเว็บ
+
+            const date = document.getElementById('expense-date').value;
+            const type = document.getElementById('expense-type').value;
+            const car = document.getElementById('car-plate').value || 'N/A';
+            const distance = parseFloat(document.getElementById('distance').value) || 0;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const description = document.getElementById('description').value;
+
+            // ตรวจสอบความถูกต้องของข้อมูล
+            if (type === 'ค่าน้ำมัน' || type === 'ค่าทางด่วน') {
+                if (!car || (type === 'ค่าน้ำมัน' && distance <= 0)) {
+                    // ใช้ alert ชั่วคราว ควรใช้ modal แทนในแอปจริง
+                    alert('โปรดเลือกทะเบียนรถและระบุระยะทางที่ถูกต้อง');
+                    return;
+                }
+            }
+            if (!date || !type || isNaN(amount) || amount <= 0) {
+                 alert('โปรดกรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+                 return;
+            }
+
+            const newExpense = {
+                id: Date.now(), // ใช้ timestamp เป็น ID ชั่วคราว
+                date,
+                type,
+                car,
+                distance,
+                amount,
+                description
+            };
+
+            expenses.push(newExpense);
+            saveExpenses(); // บันทึกข้อมูลลง localStorage
+            document.getElementById('expense-form').reset(); // ล้างฟอร์ม
+            showSection('dashboard'); // กลับไปหน้าแดชบอร์ด
+        });
+
+        // ฟังก์ชันสำหรับแสดง Modal แก้ไข
+        function showEditModal(expenseId) {
+            const expenseToEdit = expenses.find(exp => exp.id === expenseId);
+            if (!expenseToEdit) return;
+
+            document.getElementById('edit-id').value = expenseToEdit.id;
+            document.getElementById('edit-date').value = expenseToEdit.date;
+            document.getElementById('edit-type').value = expenseToEdit.type;
+            document.getElementById('edit-amount').value = expenseToEdit.amount;
+            document.getElementById('edit-description').value = expenseToEdit.description;
+            document.getElementById('edit-car-plate').value = expenseToEdit.car;
+            document.getElementById('edit-distance').value = expenseToEdit.distance;
+            
+            toggleEditCarFields(); // อัปเดตฟิลด์ทะเบียนรถและระยะทางตามประเภท
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        // ฟังก์ชันสำหรับปิด Modal แก้ไข
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        // ฟังก์ชันสำหรับบันทึกการแก้ไข
+        document.getElementById('edit-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const id = parseInt(document.getElementById('edit-id').value);
+            const expenseIndex = expenses.findIndex(exp => exp.id === id);
+
+            if (expenseIndex === -1) return;
+
+            const updatedExpense = {
+                id,
+                date: document.getElementById('edit-date').value,
+                type: document.getElementById('edit-type').value,
+                car: document.getElementById('edit-car-plate').value || 'N/A',
+                distance: parseFloat(document.getElementById('edit-distance').value) || 0,
+                amount: parseFloat(document.getElementById('edit-amount').value),
+                description: document.getElementById('edit-description').value
+            };
+
+            // ตรวจสอบความถูกต้องของข้อมูล
+            if (updatedExpense.type === 'ค่าน้ำมัน' || updatedExpense.type === 'ค่าทางด่วน') {
+                 if (!updatedExpense.car || (updatedExpense.type === 'ค่าน้ำมัน' && updatedExpense.distance <= 0)) {
+                    alert('โปรดเลือกทะเบียนรถและระบุระยะทางที่ถูกต้อง');
+                    return;
+                }
+            }
+             if (!updatedExpense.date || !updatedExpense.type || isNaN(updatedExpense.amount) || updatedExpense.amount <= 0) {
+                 alert('โปรดกรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+                 return;
+            }
+
+            expenses[expenseIndex] = updatedExpense;
+            saveExpenses();
+            closeEditModal();
+            renderExpenseList(); // อัปเดตรายการใหม่
+        });
+
+
+        // ฟังก์ชันสำหรับลบรายการ
+        function deleteExpense(expenseId) {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+                expenses = expenses.filter(exp => exp.id !== expenseId);
+                saveExpenses();
+                renderExpenseList();
+                renderDashboard();
+            }
+        }
+
+        // ฟังก์ชันสำหรับบันทึกข้อมูลลง localStorage
+        function saveExpenses() {
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+        }
+
+        // ฟังก์ชันสำหรับโหลดข้อมูลจาก localStorage
+        function loadExpenses() {
+            const savedExpenses = localStorage.getItem('expenses');
+            if (savedExpenses) {
+                expenses = JSON.parse(savedExpenses);
+            }
+        }
+
+        // ฟังก์ชันสำหรับแสดงข้อมูลบนแดชบอร์ด
+        function renderDashboard() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            
+            // กรองข้อมูลเฉพาะเดือนปัจจุบัน
+            const monthlyExpenses = expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear;
+            });
+
+            // แสดงเดือนปัจจุบัน
+            document.getElementById('current-month-display').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            // คำนวณยอดรวม
+            const totalMonthlyExpense = monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const totalFuelCost = monthlyExpenses.filter(exp => exp.type === 'ค่าน้ำมัน').reduce((sum, exp) => sum + exp.amount, 0);
+
+            document.getElementById('total-monthly-expense').textContent = totalMonthlyExpense.toFixed(2);
+            document.getElementById('total-fuel-cost').textContent = totalFuelCost.toFixed(2);
+
+            // คำนวณสรุปค่าใช้จ่ายแยกตามรถ
+            const carSummary = {};
+            monthlyExpenses.forEach(exp => {
+                if (exp.car !== 'N/A') {
+                    if (!carSummary[exp.car]) {
+                        carSummary[exp.car] = { fuel: 0, toll: 0, distance: 0 };
+                    }
+                    if (exp.type === 'ค่าน้ำมัน') {
+                        carSummary[exp.car].fuel += exp.amount;
+                        carSummary[exp.car].distance += exp.distance;
+                    } else if (exp.type === 'ค่าทางด่วน') {
+                        carSummary[exp.car].toll += exp.amount;
+                    }
+                }
+            });
+
+            const carSummaryTableBody = document.getElementById('car-summary-table-body');
+            carSummaryTableBody.innerHTML = '';
+            for (const car in carSummary) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${car}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].fuel.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].toll.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].distance.toFixed(2)}</td>
+                `;
+                carSummaryTableBody.appendChild(row);
+            }
+
+            // สร้าง Pie Chart
+            createChart(monthlyExpenses);
+        }
+
+        // ฟังก์ชันสำหรับสร้างหรืออัปเดตกราฟวงกลม
+        function createChart(data) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const expenseSummary = data.reduce((summary, exp) => {
+                summary[exp.type] = (summary[exp.type] || 0) + exp.amount;
+                return summary;
+            }, {});
+
+            const labels = Object.keys(expenseSummary);
+            const values = Object.values(expenseSummary);
+            const colors = [
+                'rgba(59, 130, 246, 0.8)', // blue-500
+                'rgba(16, 185, 129, 0.8)', // green-500
+                'rgba(249, 115, 22, 0.8)', // orange-500
+                'rgba(239, 68, 68, 0.8)',  // red-500
+                'rgba(107, 114, 128, 0.8)' // gray-500
+            ];
+
+            if (expenseChart) {
+                expenseChart.destroy(); // ทำลายกราฟเก่าก่อนสร้างใหม่
+            }
+
+            expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                                    return `${label}: ${value.toFixed(2)} บาท (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ฟังก์ชันสำหรับแสดงรายการค่าใช้จ่ายทั้งหมด
+        function renderExpenseList(filteredExpenses = expenses) {
+            const tableBody = document.getElementById('expense-list-table-body');
+            tableBody.innerHTML = '';
+            
+            const sortedExpenses = filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (sortedExpenses.length === 0) {
+                 const row = document.createElement('tr');
+                 row.innerHTML = `<td colspan="7" class="text-center py-4 text-gray-500">ไม่มีรายการค่าใช้จ่าย</td>`;
+                 tableBody.appendChild(row);
+                 return;
+            }
+
+            sortedExpenses.forEach(exp => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${exp.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.type}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.car}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.distance ? exp.distance.toFixed(2) : '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exp.description || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="showEditModal(${exp.id})" class="text-indigo-600 hover:text-indigo-900 mr-2">แก้ไข</button>
+                        <button onclick="deleteExpense(${exp.id})" class="text-red-600 hover:text-red-900">ลบ</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // ฟังก์ชันสำหรับกรองข้อมูล
+        document.getElementById('filter-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+            const type = document.getElementById('filter-type').value;
+            const car = document.getElementById('filter-car').value;
+
+            const filtered = expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                const isDateInRange = (!startDate || expDate >= new Date(startDate)) && (!endDate || expDate <= new Date(endDate));
+                const isTypeMatch = (type === 'all' || exp.type === type);
+                const isCarMatch = (car === 'all' || exp.car === car);
+
+                return isDateInRange && isTypeMatch && isCarMatch;
+            });
+
+            renderExpenseList(filtered);
+        });
+
+        // ฟังก์ชันสำหรับรีเซ็ตฟิลเตอร์
+        function clearFilters() {
+            document.getElementById('filter-form').reset();
+            renderExpenseList();
+        }
+
+        // ฟังก์ชันสำหรับสร้างรายงานสรุป
+        function renderReports() {
+            const reportMonthSelect = document.getElementById('report-month');
+            const reportYearSelect = document.getElementById('report-year');
+            const reportsTableBody = document.getElementById('reports-table-body');
+            const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            
+            // สร้างตัวเลือกเดือนและปี
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            reportMonthSelect.innerHTML = '';
+            for (let i = 0; i < 12; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = monthNames[i];
+                if (i === currentMonth) option.selected = true;
+                reportMonthSelect.appendChild(option);
+            }
+            reportYearSelect.innerHTML = '';
+            for (let i = currentYear - 5; i <= currentYear + 1; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === currentYear) option.selected = true;
+                reportYearSelect.appendChild(option);
+            }
+
+            generateReport(); // แสดงรายงานเริ่มต้น
+        }
+        
+        function generateReport() {
+            const month = parseInt(document.getElementById('report-month').value);
+            const year = parseInt(document.getElementById('report-year').value);
+
+            const filteredExpenses = expenses.filter(exp => {
+                const expDate = new Date(exp.date);
+                return expDate.getMonth() === month && expDate.getFullYear() === year;
+            });
+
+            const carSummary = {};
+            filteredExpenses.forEach(exp => {
+                if (exp.car !== 'N/A') {
+                    if (!carSummary[exp.car]) {
+                        carSummary[exp.car] = { fuel: 0, toll: 0, distance: 0 };
+                    }
+                    if (exp.type === 'ค่าน้ำมัน') {
+                        carSummary[exp.car].fuel += exp.amount;
+                        carSummary[exp.car].distance += exp.distance;
+                    } else if (exp.type === 'ค่าทางด่วน') {
+                        carSummary[exp.car].toll += exp.amount;
+                    }
+                }
+            });
+
+            const reportsTableBody = document.getElementById('reports-table-body');
+            reportsTableBody.innerHTML = '';
+            
+            if (Object.keys(carSummary).length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="5" class="text-center py-4 text-gray-500">ไม่มีข้อมูลสำหรับเดือนที่เลือก</td>`;
+                reportsTableBody.appendChild(row);
+                return;
+            }
+
+            for (const car in carSummary) {
+                const totalCarExpense = carSummary[car].fuel + carSummary[car].toll;
+                const totalDistance = carSummary[car].distance;
+                const averageCost = totalDistance > 0 ? (totalCarExpense / totalDistance) : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${car}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].fuel.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].toll.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${carSummary[car].distance.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${averageCost.toFixed(2)}</td>
+                `;
+                reportsTableBody.appendChild(row);
+            }
+        }
+
+        // ฟังก์ชันเริ่มต้นการทำงานของแอป
+        function init() {
+            loadExpenses();
+            renderDashboard();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expense-date').value = today;
+        }
+
+        window.onload = init;
+    </script>
+
+</body>
+</html>
